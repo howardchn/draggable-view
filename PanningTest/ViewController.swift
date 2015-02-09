@@ -10,7 +10,10 @@ import UIKit
 
 class ViewController: UIViewController, UIGestureRecognizerDelegate {
     var tile : UIView = MyTile()
-    var labelView = UITextView()
+    var map = UIView()
+    var eventView = UIView()
+    var rotationView = UIView()
+    
     var displayLink : CADisplayLink?
     let animationDuration: Double = 0.6
     let animationOffsetRatio: CGFloat = 0.15
@@ -18,39 +21,46 @@ class ViewController: UIViewController, UIGestureRecognizerDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        map.frame = view.frame
+        view.addSubview(map)
+        
+        eventView.frame = map.frame
+        map.addSubview(eventView)
+        
+        rotationView.frame = map.frame
+        eventView.addSubview(rotationView)
+        
         tile.frame = CGRect(x: 10, y: 10, width: 256, height: 256)
         tile.backgroundColor = UIColor.clearColor()
-        view.addSubview(tile)
+        rotationView.addSubview(tile)
         
         var panGesture = UIPanGestureRecognizer(target: self, action: Selector("panHandler:"))
         panGesture.delegate = self
-        view.addGestureRecognizer(panGesture)
+        eventView.addGestureRecognizer(panGesture)
         
         var pinchGesture = UIPinchGestureRecognizer(target: self, action: Selector("pinchHandler:"))
         pinchGesture.delegate = self
-        view.addGestureRecognizer(pinchGesture)
+        eventView.addGestureRecognizer(pinchGesture)
         
         var rotationGesture = UIRotationGestureRecognizer(target: self, action: Selector("rotationHandler:"))
         rotationGesture.delegate = self
-        view.addGestureRecognizer(rotationGesture)
-        
-        labelView.frame = CGRect(x: 0, y: 100, width: view.frame.width, height: 44)
-        labelView.backgroundColor = UIColor.clearColor()
-        view.addSubview(labelView)
+        eventView.addGestureRecognizer(rotationGesture)
     }
     
     func gestureRecognizer(gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWithGestureRecognizer otherGestureRecognizer: UIGestureRecognizer) -> Bool {
         return true
     }
     
+    var rotation : CGFloat = 0
     func rotationHandler (r: UIRotationGestureRecognizer!) {
         if r.state == UIGestureRecognizerState.Changed {
-            view.transform = CGAffineTransformMakeRotation(r.rotation)
+            rotationView.transform = CGAffineTransformRotate(rotationView.transform, r.rotation)
+            r.rotation = 0
         }
     }
 
     func panHandler (p: UIPanGestureRecognizer!) {
-        var translation = p.translationInView(view)
+        var translation = p.translationInView(rotationView)
         if (p.state == UIGestureRecognizerState.Began) {
             tile.frame = tile.layer.presentationLayer().frame
             tile.layer.removeAllAnimations()
@@ -63,12 +73,11 @@ class ViewController: UIViewController, UIGestureRecognizerDelegate {
             var newLeft = tile.frame.minX + offsetX
             var newTop = tile.frame.minY + offsetY
             
-            self.tile.frame = CGRect(x: newLeft, y: newTop, width: self.tile.frame.width, height: self.tile.frame.height)
-            labelView.text = "x: \(newLeft); y: \(newTop)"
-            p.setTranslation(CGPoint.zeroPoint, inView: view)
+            tile.frame = CGRect(x: newLeft, y: newTop, width: tile.frame.width, height: tile.frame.height)
+            p.setTranslation(CGPoint.zeroPoint, inView: eventView)
         }
         else if (p.state == UIGestureRecognizerState.Ended) {
-            var inertia = p.velocityInView(view)
+            var inertia = p.velocityInView(eventView)
             var offsetX = inertia.x * animationOffsetRatio
             var offsetY = inertia.y * animationOffsetRatio
             var newLeft = tile.frame.minX + offsetX
@@ -83,21 +92,20 @@ class ViewController: UIViewController, UIGestureRecognizerDelegate {
     }
     
     func pinchHandler (p: UIPinchGestureRecognizer!) {
-        
         if p.state == UIGestureRecognizerState.Changed {
-            var touchAnchor = p.anchorInView(view)
-            scaleView(tile, scale: p.scale, anchor: touchAnchor)
+            var touchAnchor = p.anchorInView(eventView)
+            ViewController.scaleView(tile, scale: p.scale, anchor: touchAnchor)
             p.scale = 1
         }
         else if p.state == UIGestureRecognizerState.Ended {
-            var touchAnchor = p.anchorInView(view)
+            var touchAnchor = p.anchorInView(eventView)
             UIView.animateWithDuration(animationDuration, delay: 0, options: UIViewAnimationOptions.CurveEaseOut | UIViewAnimationOptions.AllowUserInteraction, animations: {_ in
-                self.scaleView(self.tile, scale: 1 + p.velocity * self.animationOffsetRatio, anchor: touchAnchor)
+                ViewController.scaleView(self.tile, scale: 1 + p.velocity * self.animationOffsetRatio, anchor: touchAnchor)
             }, completion: {_ in self.stopWatching() })
         }
     }
     
-    func scaleView(targetView: UIView, scale: CGFloat, anchor: CGPoint) {
+    class func scaleView(targetView: UIView, scale: CGFloat, anchor: CGPoint) {
         var touchX = anchor.x
         var touchY = anchor.y
         
@@ -123,7 +131,6 @@ class ViewController: UIViewController, UIGestureRecognizerDelegate {
         var layer: AnyObject! = tile.layer.presentationLayer();
         var newLeft = layer.frame.minX
         var newTop = layer.frame.minY
-        labelView.text = "x: \(newLeft); y: \(newTop)"
     }
     
     func stopWatching () {
