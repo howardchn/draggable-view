@@ -11,6 +11,7 @@ import UIKit
 class ViewController: UIViewController {
     var tile : UIView = UIView()
     var labelView = UITextView()
+    var displayLink : CADisplayLink?
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -34,6 +35,8 @@ class ViewController: UIViewController {
         var translation = p.translationInView(view)
         if (p.state == UIGestureRecognizerState.Began) {
             
+            self.tile.layer.removeAllAnimations()
+            self.stopWatching()
         }
         else if (p.state == UIGestureRecognizerState.Changed) {
             var offsetX = translation.x
@@ -47,20 +50,43 @@ class ViewController: UIViewController {
             p.setTranslation(CGPoint.zeroPoint, inView: view)
         }
         else if (p.state == UIGestureRecognizerState.Ended) {
-//            var inertia = p.velocityInView(view)
-//            var offsetX = inertia.x * 0.2
-//            var offsetY = inertia.y * 0.2
-//            var newLeft = tile.frame.minX + offsetX
-//            var newTop = tile.frame.minY + offsetY
-//            
-//            UIView.animateWithDuration(0.3, delay: 0, options:UIViewAnimationOptions.CurveEaseOut, animations: {_ in
-//                self.tile.frame = CGRect(x: newLeft, y: newTop, width: self.tile.frame.width, height: self.tile.frame.height)
-//            }, completion: nil)
+            var inertia = p.velocityInView(view)
+            var offsetX = inertia.x * 0.2
+            var offsetY = inertia.y * 0.2
+            var newLeft = tile.frame.minX + offsetX
+            var newTop = tile.frame.minY + offsetY
+            
+            startWatching()
+            UIView.animateWithDuration(1, delay: 0, options:UIViewAnimationOptions.CurveEaseOut, animations: {_ in
+                self.tile.frame = CGRect(x: newLeft, y: newTop, width: self.tile.frame.width, height: self.tile.frame.height)
+                }, completion: {_ in self.stopWatching() })
+            
         }
     }
     
     func pinchHandler (p: UIPinchGestureRecognizer!) {
     
+    }
+    
+    func frameUpdated (d: CADisplayLink!) {
+        var layer: AnyObject! = tile.layer.presentationLayer();
+        var newLeft = layer.frame.minX
+        var newTop = layer.frame.minY
+        labelView.text = "x: \(newLeft); y: \(newTop)"
+    }
+    
+    func stopWatching () {
+        if (displayLink != nil) {
+            displayLink!.invalidate()
+            displayLink = nil
+        }
+    }
+    
+    func startWatching() {
+        if (displayLink == nil) {
+            displayLink = CADisplayLink(target: self, selector: Selector("frameUpdated:"))
+            displayLink?.addToRunLoop(NSRunLoop.mainRunLoop(), forMode: NSDefaultRunLoopMode)
+        }
     }
 }
 
