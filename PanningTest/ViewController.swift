@@ -23,9 +23,6 @@ class ViewController: UIViewController {
         var panGesture = UIPanGestureRecognizer(target: self, action: Selector("panHandler:"))
         view.addGestureRecognizer(panGesture)
         
-        var pinchGesture = UIPinchGestureRecognizer(target: self, action: Selector("pinchHandler:"))
-        view.addGestureRecognizer(pinchGesture)
-        
         labelView.frame = CGRect(x: 0, y: 100, width: view.frame.width, height: 44)
         labelView.backgroundColor = UIColor.clearColor()
         view.addSubview(labelView)
@@ -34,8 +31,8 @@ class ViewController: UIViewController {
     func panHandler (p: UIPanGestureRecognizer!) {
         var translation = p.translationInView(view)
         if (p.state == UIGestureRecognizerState.Began) {
-            
-            self.tile.layer.removeAllAnimations()
+            tile.frame = tile.layer.presentationLayer().frame
+            tile.layer.removeAllAnimations()
             self.stopWatching()
         }
         else if (p.state == UIGestureRecognizerState.Changed) {
@@ -57,15 +54,11 @@ class ViewController: UIViewController {
             var newTop = tile.frame.minY + offsetY
             
             startWatching()
-            UIView.animateWithDuration(1, delay: 0, options:UIViewAnimationOptions.CurveEaseOut, animations: {_ in
+            
+            UIView.animateWithDuration(1, delay: 0, options:UIViewAnimationOptions.CurveEaseOut | UIViewAnimationOptions.AllowUserInteraction | UIViewAnimationOptions.BeginFromCurrentState, animations: {_ in
                 self.tile.frame = CGRect(x: newLeft, y: newTop, width: self.tile.frame.width, height: self.tile.frame.height)
                 }, completion: {_ in self.stopWatching() })
-            
         }
-    }
-    
-    func pinchHandler (p: UIPinchGestureRecognizer!) {
-    
     }
     
     func frameUpdated (d: CADisplayLink!) {
