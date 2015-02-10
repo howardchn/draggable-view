@@ -77,7 +77,7 @@ class ViewController: UIViewController, UIGestureRecognizerDelegate {
             p.setTranslation(CGPoint.zeroPoint, inView: eventView)
         }
         else if (p.state == UIGestureRecognizerState.Ended) {
-            var inertia = p.velocityInView(eventView)
+            var inertia = p.velocityInView(rotationView)
             var offsetX = inertia.x * animationOffsetRatio
             var offsetY = inertia.y * animationOffsetRatio
             var newLeft = tile.frame.minX + offsetX
